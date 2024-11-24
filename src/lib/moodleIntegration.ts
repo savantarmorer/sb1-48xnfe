@@ -1,5 +1,8 @@
-import { User, Challenge, Achievement } from '../types';
+import { Achievement } from '../types/achievements';
 
+/**
+ * Moodle event types
+ */
 interface MoodleEvent {
   type: 'quiz_completed' | 'forum_post' | 'assignment_submitted' | 'resource_viewed';
   userId: string;
@@ -8,6 +11,37 @@ interface MoodleEvent {
   data: Record<string, any>;
 }
 
+/**
+ * Quiz completion data
+ */
+interface QuizData {
+  score: number;
+  maxScore: number;
+  timeSpent: number;
+  attempts: number;
+}
+
+/**
+ * Forum post data
+ */
+interface ForumData {
+  wordCount: number;
+  isFirstPost: boolean;
+  topicId: string;
+}
+
+/**
+ * Assignment data
+ */
+interface AssignmentData {
+  deadline: string;
+  timeSubmitted: string;
+  fileCount: number;
+}
+
+/**
+ * Singleton class for Moodle integration
+ */
 export class MoodleIntegration {
   private static instance: MoodleIntegration;
   private eventQueue: MoodleEvent[] = [];
@@ -23,6 +57,9 @@ export class MoodleIntegration {
     return MoodleIntegration.instance;
   }
 
+  /**
+   * Sets up event listeners for Moodle events
+   */
   private setupEventListeners() {
     window.addEventListener('message', (event) => {
       if (event.data.type === 'MOODLE_EVENT') {
@@ -31,11 +68,17 @@ export class MoodleIntegration {
     });
   }
 
+  /**
+   * Handles incoming Moodle events
+   */
   private handleMoodleEvent(event: MoodleEvent) {
     this.eventQueue.push(event);
     this.processEventQueue();
   }
 
+  /**
+   * Processes queued events
+   */
   private async processEventQueue() {
     while (this.eventQueue.length > 0) {
       const event = this.eventQueue.shift();
@@ -58,8 +101,11 @@ export class MoodleIntegration {
     }
   }
 
+  /**
+   * Handles quiz completion events
+   */
   private async handleQuizCompletion(event: MoodleEvent) {
-    const { score, maxScore } = event.data;
+    const { score, maxScore } = event.data as QuizData;
     const percentage = (score / maxScore) * 100;
     
     // Calculate XP based on score
@@ -73,8 +119,11 @@ export class MoodleIntegration {
     };
   }
 
+  /**
+   * Handles forum post events
+   */
   private async handleForumPost(event: MoodleEvent) {
-    const { wordCount, isFirstPost } = event.data;
+    const { wordCount, isFirstPost } = event.data as ForumData;
     
     return {
       xp: Math.min(wordCount / 2, 100) + (isFirstPost ? 50 : 0),
@@ -83,9 +132,12 @@ export class MoodleIntegration {
     };
   }
 
+  /**
+   * Handles assignment submission events
+   */
   private async handleAssignmentSubmission(event: MoodleEvent) {
-    const { submittedBefore, deadline } = event.data;
-    const earlySubmission = new Date(deadline).getTime() - new Date().getTime() > 86400000; // 24h
+    const { deadline, timeSubmitted } = event.data as AssignmentData;
+    const earlySubmission = new Date(deadline).getTime() - new Date(timeSubmitted).getTime() > 86400000; // 24h
     
     return {
       xp: 100 + (earlySubmission ? 50 : 0),
@@ -94,6 +146,9 @@ export class MoodleIntegration {
     };
   }
 
+  /**
+   * Handles resource view events
+   */
   private async handleResourceView(event: MoodleEvent) {
     const { timeSpent } = event.data;
     const meaningfulInteraction = timeSpent > 60; // More than 1 minute
@@ -105,30 +160,75 @@ export class MoodleIntegration {
     };
   }
 
+  /**
+   * Checks for quiz-related achievements
+   */
   private checkQuizAchievements(score: number): Achievement[] {
-    const achievements: Achievement[] = [];
-    
     if (score === 100) {
-      achievements.push({
+      return [{
         id: 'perfect_quiz',
         title: 'Perfect Score',
         description: 'Score 100% on a quiz',
-        icon: '🎯',
+        category: 'quests',
+        points: 50,
         rarity: 'rare',
-        unlockedAt: new Date()
-      });
+        unlocked: true,
+        unlockedAt: new Date(),
+        prerequisites: [],
+        dependents: [],
+        triggerConditions: [{
+          type: 'quiz_score',
+          value: 100,
+          comparison: 'eq'
+        }],
+        order: 1
+      }];
     }
-    
-    return achievements;
+    return [];
   }
 
+  /**
+   * Checks for forum-related achievements
+   */
   private checkForumAchievements(userId: string): Achievement[] {
     // Implementation for forum achievements
     return [];
   }
 
+  /**
+   * Checks for assignment-related achievements
+   */
   private checkAssignmentAchievements(userId: string): Achievement[] {
     // Implementation for assignment achievements
     return [];
   }
 }
+
+/**
+ * Module Role:
+ * - Integrates with Moodle LMS
+ * - Processes learning events
+ * - Awards XP and achievements
+ * 
+ * Dependencies:
+ * - Achievement types
+ * - Event system
+ * 
+ * Used By:
+ * - Game progression system
+ * - Achievement system
+ * - XP/Coins system
+ * 
+ * Features:
+ * - Event queue processing
+ * - Achievement tracking
+ * - XP/Coins rewards
+ * - Early submission bonuses
+ * 
+ * Scalability:
+ * - Singleton pattern
+ * - Event-driven architecture
+ * - Type-safe events
+ * - Modular achievement checks
+ */
+

@@ -1,85 +1,56 @@
 import { createClient } from '@supabase/supabase-js';
-import { Database } from '../types/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
-
-// Auth helpers
-export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  return { data, error };
-};
-
-export const signUp = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-  return { data, error };
-};
-
-export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  return { error };
-};
-
-export const signInWithGoogle = async () => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
-      }
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
     }
-  });
-  return { data, error };
-};
+  }
+);
 
-// Real-time subscriptions
-export const subscribeToUserProgress = (userId: string, callback: (payload: any) => void) => {
-  return supabase
-    .channel('user_progress')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'user_progress',
-        filter: `user_id=eq.${userId}`
-      },
-      callback
-    )
-    .subscribe();
-};
+// Add error handling for auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    console.log('User signed in:', session?.user?.email);
+  } else if (event === 'SIGNED_OUT') {
+    console.log('User signed out');
+  } else if (event === 'TOKEN_REFRESHED') {
+    console.log('Token refreshed');
+  }
+});
 
-// Database operations
-export const updateUserProgress = async (userId: string, data: any) => {
-  const { data: result, error } = await supabase
-    .from('user_progress')
-    .upsert({ user_id: userId, ...data })
-    .select()
-    .single();
-  
-  return { data: result, error };
-};
-
-export const getUserProgress = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('user_progress')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  
-  return { data, error };
-};
+/**
+ * Generic data fetching utility
+ * @param table - The table to fetch data from
+ * @param query - Optional query parameters
+ * @returns The fetched data or null if error
+ */
+export async function getData<T>(table: keyof typeof TABLES, query?: any): Promise<T | null> {
+  try {
+    let queryBuilder = supabase.from(TABLES[table]).select('*');
+    
+    if (query) {
+      queryBuilder = queryBuilder.match(query);
+    }
+    
+    const { data, error } = await queryBuilder;
+    
+    if (error) {
+      console.error(`Error fetching data from ${table}:`, error);
+      return null;
+    }
+    
+    return data as T;
+  } catch (error) {
+    console.error(`Error in getData for ${table}:`, error);
+    return null;
+  }
+}

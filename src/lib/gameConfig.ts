@@ -32,3 +32,4 @@ export const QUEST_REWARDS = {
     coins: { min: 500, max: 1000 }
   }
 };
+

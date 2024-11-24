@@ -1,51 +1,90 @@
-export interface User {
-  id: string;
-  name: string;
-  level: number;
-  xp: number;
-  streak: number;
-  coins: number;
-  achievements: Achievement[];
-  inventory: InventoryItem[];
-  backpack?: InventoryItem[];
-  roles?: string[];
-  title?: string;
-  avatar?: string;
-}
+import { Achievement } from './achievements';
+import { GameItem, InventoryItem, ItemType } from './items';
+import { User } from './user';
 
+/**
+ * Core Challenge interface
+ * Used for game challenges and quests
+ */
 export interface Challenge {
   id: string;
-  title: string;
-  description: string;
-  xpReward: number;
-  coinReward: number;
-  deadline: Date;
-  type: 'daily' | 'weekly' | 'epic';
+  type: string;
+  difficulty: number;
   requirements: string[];
 }
 
-export interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  unlockedAt?: Date;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+/**
+ * Re-export essential types
+ * These are commonly used across the application
+ */
+export type {
+  // User types
+  User,
+  
+  // Item types
+  GameItem,
+  InventoryItem,
+  ItemType,
+  
+  // Achievement types
+  Achievement,
+};
+
+/**
+ * Type guard for checking if an item is equippable
+ * @param item - Item to check
+ * @returns boolean indicating if item can be equipped
+ */
+export function isEquippableItem(item: InventoryItem): boolean {
+  return item.type === 'equipment' || item.type === 'cosmetic';
 }
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  description: string;
-  type: 'booster' | 'material' | 'cosmetic';
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
-  uses?: number;
+/**
+ * Type guard for checking if an item is consumable
+ * @param item - Item to check
+ * @returns boolean indicating if item can be consumed
+ */
+export function isConsumableItem(item: InventoryItem): boolean {
+  return item.type === 'consumable' && item.metadata?.uses !== undefined;
 }
 
-export interface LeaderboardEntry {
-  userId: string;
-  username: string;
-  score: number;
-  rank: number;
-  avatar: string;
-}
+/**
+ * Module Role:
+ * - Central type definitions
+ * - Type re-exports
+ * - Type guard functions
+ * 
+ * Dependencies:
+ * - achievements.ts
+ * - items.ts
+ * - user.ts
+ * 
+ * Used By:
+ * - Components needing type definitions
+ * - Services requiring type checking
+ * - Utility functions
+ * 
+ * Features:
+ * - Type-safe exports
+ * - Utility functions
+ * - Type guards
+ * 
+ * Scalability:
+ * - Centralized type management
+ * - Easy to extend
+ * - Clear dependencies
+ * 
+ * Best Practices:
+ * - Named exports
+ * - Type guards
+ * - Clear documentation
+ * - Modular organization
+ * 
+ * Related Files:
+ * - achievements.ts
+ * - items.ts
+ * - user.ts
+ * - actions.ts
+ */
+
+

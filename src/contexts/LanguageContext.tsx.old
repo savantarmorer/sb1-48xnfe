@@ -1,35 +1,28 @@
 import React, { createContext, useContext, useState } from 'react';
-import { translations, Languages } from '../i18n/translations';
+import { translations } from '../i18n/translations';
 
-type Language = Languages;
+type Language = 'en' | 'pt';
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string, params?: Record<string, any>) => string;
+  t: (key: string) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>('pt');
 
-  const t = (key: string, params?: Record<string, any>): string => {
+  const t = (key: string): string => {
     const keys = key.split('.');
-    let value = translations[language];
+    let value: any = translations[language];
     
     for (const k of keys) {
-      if (!value[k]) return key;
-      value = value[k];
+      value = value?.[k];
     }
-
-    if (params) {
-      return Object.entries(params).reduce((str, [key, value]) => {
-        return str.replace(new RegExp(`{${key}}`, 'g'), String(value));
-      }, value as string);
-    }
-
-    return value as string;
+    
+    return value || key;
   };
 
   return (
@@ -46,5 +39,3 @@ export function useLanguage() {
   }
   return context;
 }
-
-export const useTranslation = useLanguage;

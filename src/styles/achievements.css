@@ -1,0 +1,70 @@
+@keyframes unlock-shine {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.achievement-card-unlocked {
+  @apply border-indigo-200 dark:border-indigo-800 bg-gradient-to-br from-white to-indigo-50 dark:from-gray-800 dark:to-indigo-900/20;
+  position: relative;
+  overflow: hidden;
+}
+
+.achievement-card-unlocked::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: unlock-shine 2s infinite;
+  pointer-events: none;
+}
+
+.achievement-card-locked {
+  @apply border-gray-200 dark:border-gray-700 opacity-75;
+}
+
+.achievement-badge {
+  @apply relative inline-flex items-center justify-center;
+  width: 48px;
+  height: 48px;
+}
+
+.achievement-badge::before {
+  content: '';
+  @apply absolute inset-0 rounded-full;
+  background: conic-gradient(from 0deg, currentColor, transparent);
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.achievement-points-milestone {
+  @apply relative overflow-hidden rounded-lg;
+  background: linear-gradient(45deg, var(--milestone-color-from), var(--milestone-color-to));
+}
+
+.achievement-points-milestone::after {
+  content: '';
+  @apply absolute inset-0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: milestone-shine 2s infinite;
+}
