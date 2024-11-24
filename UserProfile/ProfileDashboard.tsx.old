@@ -1,0 +1,143 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Book, Clock, Target, Award, TrendingUp, Star } from 'lucide-react';
+import { useGame } from '../../contexts/GameContext';
+import { LevelSystem } from '../../lib/levelSystem';
+
+export default function ProfileDashboard() {
+  const { state } = useGame();
+  const totalStudyTime = state.user.studyTime || 0;
+  const studyHours = Math.floor(totalStudyTime / 60);
+  const questCompletion = (state.completedQuests.length / state.quests?.length) * 100 || 0;
+  const achievementProgress = (state.user.achievements.length / 20) * 100; // Assuming 20 total achievements
+
+  const stats = [
+    {
+      label: 'Study Hours',
+      value: studyHours.toString(),
+      icon: <Clock className="text-blue-500" />,
+      change: `+${Math.floor(studyHours * 0.1)}%`
+    },
+    {
+      label: 'Quest Progress',
+      value: `${Math.floor(questCompletion)}%`,
+      icon: <Target className="text-green-500" />,
+      change: `+${Math.floor(questCompletion * 0.08)}%`
+    },
+    {
+      label: 'Achievements',
+      value: `${state.user.achievements.length}/20`,
+      icon: <Award className="text-purple-500" />,
+      change: `+${Math.floor(achievementProgress)}%`
+    }
+  ];
+
+  const learningProgress = [
+    {
+      subject: 'Constitutional Law',
+      progress: Math.floor((state.user.constitutionalScore || 0) / 10)
+    },
+    {
+      subject: 'Civil Law',
+      progress: Math.floor((state.user.civilScore || 0) / 10)
+    },
+    {
+      subject: 'Criminal Law',
+      progress: Math.floor((state.user.criminalScore || 0) / 10)
+    },
+    {
+      subject: 'Administrative Law',
+      progress: Math.floor((state.user.administrativeScore || 0) / 10)
+    }
+  ];
+
+  const calculateAchievementProgress = () => {
+    const totalAchievements = state.achievements.length;
+    const unlockedAchievements = state.achievements.filter(a => a.unlocked).length;
+    
+    return {
+      total: totalAchievements,
+      unlocked: unlockedAchievements,
+      percentage: (unlockedAchievements / totalAchievements) * 100
+    };
+  };
+
+  const achievementStats = calculateAchievementProgress();
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="card"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted">{stat.label}</p>
+                <h3 className="text-2xl font-bold mt-1">{stat.value}</h3>
+              </div>
+              {stat.icon}
+            </div>
+            <div className="mt-4 flex items-center space-x-2">
+              <TrendingUp size={16} className="text-green-500" />
+              <span className="text-sm text-green-500">{stat.change} from last month</span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="card">
+        <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+          <Book className="text-indigo-500" />
+          <span>Learning Progress</span>
+        </h3>
+        <div className="space-y-4">
+          {learningProgress.map((subject) => (
+            <div key={subject.subject}>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-sm font-medium">{subject.subject}</span>
+                <span className="text-sm text-muted">{subject.progress}%</span>
+              </div>
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${subject.progress}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="h-full bg-indigo-600 dark:bg-indigo-500 rounded-full"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
+          <Star className="text-yellow-500" />
+          <span>Recent Achievements</span>
+        </h3>
+        <div className="space-y-3">
+          {state.user.achievements.slice(-3).map((achievement) => (
+            <div
+              key={achievement.id}
+              className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+            >
+              <Award className={`text-${achievement.rarity === 'legendary' ? 'yellow' : 'indigo'}-500`} />
+              <div>
+                <h4 className="font-medium">{achievement.title}</h4>
+                <p className="text-sm text-muted">{achievement.description}</p>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                  Unlocked {new Date(achievement.unlockedAt || Date.now()).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
